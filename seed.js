@@ -19,9 +19,7 @@ import {
 const git = simpleGit();
 const getTodayDate = () => dayjs().format("YYYY-MM-DD");
 
-const checkTodayCommits = async () => {
-  const since = `${getTodayDate()}T00:00:00`;
-  const until = `${getTodayDate()}T23:59:59`;
+const fetchCommits = async (since, until) => {
   const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits?since=${since}&until=${until}`;
 
   try {
@@ -37,12 +35,18 @@ const checkTodayCommits = async () => {
       throw new Error(`GitHub API error: ${error}`);
     }
 
-    const commits = await response.json();
-    return commits.length > 0;
+    return await response.json();
   } catch (err) {
     console.error(err.message);
-    return false;
+    return [];
   }
+};
+
+const checkTodayCommits = async () => {
+  const since = `${getTodayDate()}T00:00:00`;
+  const until = `${getTodayDate()}T23:59:59`;
+  const commits = await fetchCommits(since, until);
+  return commits.length > 0;
 };
 
 const commitAndPush = async () => {
@@ -58,10 +62,12 @@ const commitAndPush = async () => {
 
 scheduleJob("55 23 * * *", async () => {
   const hasCommits = await checkTodayCommits();
+  const today = getTodayDate();
+
   if (!hasCommits) {
     await evolve();
     await commitAndPush();
   } else {
-    console.log(`[${getTodayDate()}] Commit already exists. No action needed.`);
+    console.log(`[${today}] Commit already exists. No action needed.`);
   }
 });
