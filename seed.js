@@ -70,7 +70,6 @@ const checkTodayCommits = async () => {
 /**
  * Commits and pushes changes to the Git repository.
  * @async
- * @function commitAndPush
  * @throws {Error} If there's an error during the git operations.
  */
 const commitAndPush = async () => {
