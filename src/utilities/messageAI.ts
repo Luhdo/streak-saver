@@ -41,7 +41,7 @@ export default async function (
         generationConfig: {
           stopSequences: ["Title"],
           temperature: 1.5,
-          maxOutputTokens: 800,
+//          maxOutputTokens: 800,
           topP: 0.8,
           topK: 10,
         },
