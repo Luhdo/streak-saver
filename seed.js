@@ -16,23 +16,10 @@ import {
   REPO_NAME,
 } from "./config";
 
-/**
- * @type {simpleGit.SimpleGit}
- */
 const git = simpleGit();
 
-/**
- * Gets the current date in YYYY-MM-DD format.
- * @returns {string} The current date.
- */
 const getTodayDate = () => dayjs().format("YYYY-MM-DD");
 
-/**
- * Fetches commits from the GitHub API within a specified date range.
- * @param {string} since - The start date and time for the commit search (ISO 8601 format).
- * @param {string} until - The end date and time for the commit search (ISO 8601 format).
- * @returns {Promise<Array<object>>} An array of commit objects.  Returns an empty array if there's an error.
- */
 const fetchCommits = async (since, until) => {
   const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits?since=${since}&until=${until}`;
 
@@ -56,22 +43,14 @@ const fetchCommits = async (since, until) => {
   }
 };
 
-/**
- * Checks if there are any commits on GitHub for the current date.
- * @returns {Promise<boolean>} True if commits exist for today, false otherwise.
- */
 const checkTodayCommits = async () => {
-  const since = `${getTodayDate()}T00:00:00`;
-  const until = `${getTodayDate()}T23:59:59`;
+  const today = getTodayDate();
+  const since = `${today}T00:00:00`;
+  const until = `${today}T23:59:59`;
   const commits = await fetchCommits(since, until);
   return commits.length > 0;
 };
 
-/**
- * Commits and pushes changes to the Git repository.
- * @async
- * @throws {Error} If there's an error during the git operations.
- */
 const commitAndPush = async () => {
   try {
     await git.add(FILE_TO_UPDATE);
@@ -83,13 +62,9 @@ const commitAndPush = async () => {
   }
 };
 
-/**
- * Schedules a job to check for commits and automatically commit changes if none exist for the current day.
- * Runs at 23:55 every day.
- */
 scheduleJob("55 23 * * *", async () => {
-  const hasCommits = await checkTodayCommits();
   const today = getTodayDate();
+  const hasCommits = await checkTodayCommits();
 
   if (!hasCommits) {
     await evolve();
