@@ -62,6 +62,11 @@ const commitAndPush = async () => {
   }
 };
 
+const logToFile = (message) => {
+  const logEntry = `[${getTodayDate()}] ${message}\n`;
+  appendFileSync("auto_commit.log", logEntry);
+};
+
 scheduleJob("55 23 * * *", async () => {
   const today = getTodayDate();
   const hasCommits = await checkTodayCommits();
@@ -69,7 +74,9 @@ scheduleJob("55 23 * * *", async () => {
   if (!hasCommits) {
     await evolve();
     await commitAndPush();
+    logToFile("Auto-commit successful.");
   } else {
     console.log(`[${today}] Commit already exists. No action needed.`);
+    logToFile("Commit already exists. No action needed.");
   }
 });
