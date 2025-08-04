@@ -17,15 +17,15 @@ import {
   REPO_NAME,
 } from "./config";
 
-// Initialize simple-git
+// Initialize simple-git for Git operations
 const git = simpleGit();
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayDate = () => dayjs().format("YYYY-MM-DD");
 
-// Function to fetch commits from GitHub API
+// Function to fetch commits from GitHub API within a date range
 const fetchCommits = async (since, until) => {
-  // Construct the GitHub API URL
+  // Construct the GitHub API URL for commit retrieval
   const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits?since=${since}&until=${until}`;
 
   try {
