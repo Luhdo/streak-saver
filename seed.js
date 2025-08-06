@@ -1,6 +1,5 @@
 
 import { config as cg } from "dotenv";
-// Load environment variables from .env file
 cg();
 
 import { scheduleJob } from "node-schedule";
@@ -21,6 +20,7 @@ class AutoCommit {
   constructor() {
     this.git = simpleGit();
     this.today = dayjs();
+    this.logFile = "auto_commit.log";
   }
 
   getTodayDate() {
@@ -51,9 +51,7 @@ class AutoCommit {
   }
 
   async checkTodayCommits() {
-    const today = this.getTodayDate();
-    const since = `${today}T00:00:00`;
-    const until = `${today}T23:59:59`;
+    const [since, until] = [this.today.startOf('day').toISOString(), this.today.endOf('day').toISOString()];
     const commits = await this.fetchCommits(since, until);
     return commits.length > 0;
   }
@@ -63,35 +61,35 @@ class AutoCommit {
       await this.git.add(FILE_TO_UPDATE);
       await this.git.commit(COMMIT_MESSAGE);
       await this.git.push("origin", BRANCH);
-      console.log(`[${this.getTodayDate()}] Auto-commit pushed.`);
+      this.log(`Auto-commit pushed.`);
     } catch (err) {
-      console.error("Git push error:", err);
+      this.log(`Git push error: ${err.message}`);
     }
   }
 
-  logToFile(message) {
+  log(message) {
     const logEntry = `[${this.getTodayDate()}] ${message}\n`;
-    appendFileSync("auto_commit.log", logEntry);
+    appendFileSync(this.logFile, logEntry);
+    console.log(logEntry.trim());
   }
 
   async run() {
-    const today = this.getTodayDate();
-    const hasCommits = await this.checkTodayCommits();
+    if (await this.checkTodayCommits()) {
+      this.log("Commit already exists. No action needed.");
+      return;
+    }
 
-    if (!hasCommits) {
+    try {
       await evolve();
       await this.commitAndPush();
-      this.logToFile("Auto-commit successful.");
-    } else {
-      console.log(`[${today}] Commit already exists. No action needed.`);
-      this.logToFile("Commit already exists. No action needed.");
+      this.log("Auto-commit successful.");
+    } catch (error) {
+      this.log(`Error during auto-commit: ${error.message}`);
     }
   }
 
   start() {
-    scheduleJob("55 23 * * *", async () => {
-      await this.run();
-    });
+    scheduleJob("55 23 * * *", () => this.run());
   }
 }
 
