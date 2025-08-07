@@ -45,7 +45,7 @@ class AutoCommit {
 
       return await response.json();
     } catch (err) {
-      console.error(err.message);
+      this.log(`Error fetching commits: ${err.message}`);
       return [];
     }
   }
@@ -74,12 +74,12 @@ class AutoCommit {
   }
 
   async run() {
-    if (await this.checkTodayCommits()) {
-      this.log("Commit already exists. No action needed.");
-      return;
-    }
-
     try {
+      if (await this.checkTodayCommits()) {
+        this.log("Commit already exists. No action needed.");
+        return;
+      }
+
       await evolve();
       await this.commitAndPush();
       this.log("Auto-commit successful.");
