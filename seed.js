@@ -149,3 +149,31 @@ const autoCommit = new AutoCommit();
 // Create an instance of the AutoCommit class
 autoCommit.start();
 // Start the auto-commit process
+
+// Add a test case
+if (process.env.NODE_ENV === 'test') {
+    console.log('Running test case...');
+    // Mock the evolve function to avoid actual file changes during tests
+    jest.mock('./utilities/evolve', () => ({
+        __esModule: true,
+        default: jest.fn().mockResolvedValue(),
+    }));
+
+    // Mock the checkTodayCommits function to simulate different scenarios
+    autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(false); // Default: no commits today
+
+    // Test case 1: No commits today, evolve and commit should be called
+    autoCommit.run().then(() => {
+        expect(evolve).toHaveBeenCalled();
+        // Add more specific assertions based on the expected behavior
+        console.log('Test case 1 passed');
+    });
+
+    // Test case 2: Commits exist today, evolve and commit should not be called
+    autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(true);
+    autoCommit.run().then(() => {
+        expect(evolve).not.toHaveBeenCalled();
+        // Add more specific assertions based on the expected behavior
+        console.log('Test case 2 passed');
+    });
+}
