@@ -5,7 +5,7 @@ cg();
 
 import { scheduleJob } from "node-schedule";
 // Import node-schedule for scheduling jobs
-import simpleGit from "simple-git";
+import simpleGit, { SimpleGit } from "simple-git";
 // Import simple-git for Git operations
 import dayjs from "dayjs";
 // Import dayjs for date and time manipulation
@@ -24,6 +24,10 @@ import {
 // Import configuration variables from the config file
 
 class AutoCommit {
+  private git: SimpleGit;
+  private today: dayjs.Dayjs;
+  private logFile: string;
+
   constructor() {
     // Initialize the AutoCommit class
     this.git = simpleGit();
@@ -34,13 +38,13 @@ class AutoCommit {
     // Define the log file name
   }
 
-  getTodayDate() {
+  getTodayDate(): string {
     // Method to format the current date
     return this.today.format("YYYY-MM-DD");
     // Return the formatted date
   }
 
-  async fetchCommits(since, until) {
+  async fetchCommits(since: string, until: string): Promise<any[]> {
     // Method to fetch commits from the GitHub API
     const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits?since=${since}&until=${until}`;
     // Construct the GitHub API URL
@@ -67,7 +71,7 @@ class AutoCommit {
 
       return await response.json();
       // Parse the response as JSON and return it
-    } catch (err) {
+    } catch (err: any) {
       // Catch any errors during the API call
       this.log(`Error fetching commits: ${err.message}`);
       // Log the error message
@@ -76,7 +80,7 @@ class AutoCommit {
     }
   }
 
-  async checkTodayCommits() {
+  async checkTodayCommits(): Promise<boolean> {
     // Method to check if there are any commits today
     const [since, until] = [this.today.startOf('day').toISOString(), this.today.endOf('day').toISOString()];
     // Define the start and end times for today
@@ -86,7 +90,7 @@ class AutoCommit {
     // Return true if there are any commits, false otherwise
   }
 
-  async commitAndPush() {
+  async commitAndPush(): Promise<void> {
     // Method to commit and push changes to the repository
     try {
       await this.git.add(FILE_TO_UPDATE);
@@ -97,14 +101,14 @@ class AutoCommit {
       // Push the changes to the remote repository
       this.log(`Auto-commit pushed.`);
       // Log a message indicating the push was successful
-    } catch (err) {
+    } catch (err: any) {
       // Catch any errors during the Git operations
       this.log(`Git push error: ${err.message}`);
       // Log the error message
     }
   }
 
-  log(message) {
+  log(message: string): void {
     // Method to log messages to the console and a log file
     const logEntry = `[${this.getTodayDate()}] ${message}\n`;
     // Create a log entry with the current date and message
@@ -114,7 +118,7 @@ class AutoCommit {
     // Log the entry to the console
   }
 
-  async run() {
+  async run(): Promise<void> {
     // Method to run the auto-commit process
     try {
       if (await this.checkTodayCommits()) {
@@ -131,14 +135,14 @@ class AutoCommit {
       // Commit and push the changes
       this.log("Auto-commit successful.");
       // Log a message indicating the auto-commit was successful
-    } catch (error) {
+    } catch (error: any) {
       // Catch any errors during the auto-commit process
       this.log(`Error during auto-commit: ${error.message}`);
       // Log the error message
     }
   }
 
-  start() {
+  start(): void {
     // Method to start the auto-commit process
     scheduleJob("55 23 * * *", () => this.run());
     // Schedule the run method to execute daily at 23:55
