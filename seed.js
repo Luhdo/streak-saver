@@ -1,18 +1,12 @@
 
 import { config as cg } from "dotenv";
-// Load environment variables from .env file
 cg();
 
 import { scheduleJob } from "node-schedule";
-// Import node-schedule for scheduling jobs
 import simpleGit, { SimpleGit } from "simple-git";
-// Import simple-git for Git operations
 import dayjs from "dayjs";
-// Import dayjs for date and time manipulation
 import { appendFileSync } from "node:fs";
-// Import appendFileSync to write to a file
 import evolve from "./utilities/evolve";
-// Import the evolve function from the utilities folder
 import {
   BRANCH,
   COMMIT_MESSAGE,
@@ -21,163 +15,113 @@ import {
   GITHUB_USERNAME,
   REPO_NAME,
 } from "./config";
-// Import configuration variables from the config file
 
 class AutoCommit {
   private git: SimpleGit;
   private today: dayjs.Dayjs;
   private logFile: string;
+  private readonly apiUrl: string;
 
   constructor() {
-    // Initialize the AutoCommit class
     this.git = simpleGit();
-    // Initialize simple-git instance
     this.today = dayjs();
-    // Get the current date using dayjs
     this.logFile = "auto_commit.log";
-    // Define the log file name
+    this.apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits`;
   }
 
-  getTodayDate(): string {
-    // Method to format the current date
+  private getFormattedDate(): string {
     return this.today.format("YYYY-MM-DD");
-    // Return the formatted date
   }
 
-  async fetchCommits(since: string, until: string): Promise<any[]> {
-    // Method to fetch commits from the GitHub API
-    const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits?since=${since}&until=${until}`;
-    // Construct the GitHub API URL
+  private async fetchCommits(since: string, until: string): Promise<any[]> {
+    const url = `${this.apiUrl}?since=${since}&until=${until}`;
 
     try {
       const response = await fetch(url, {
-        // Fetch commits from the GitHub API
         headers: {
-          // Set headers for the API request
           Authorization: `Bearer ${GITHUB_TOKEN}`,
-          // Set the authorization token
           "User-Agent": "commit-checker",
-          // Set the user agent
         },
       });
 
       if (!response.ok) {
-        // Check if the response is not okay
         const error = await response.text();
-        // Get the error message from the response
         throw new Error(`GitHub API error: ${error}`);
-        // Throw an error if the response is not ok
       }
 
       return await response.json();
-      // Parse the response as JSON and return it
     } catch (err: any) {
-      // Catch any errors during the API call
       this.log(`Error fetching commits: ${err.message}`);
-      // Log the error message
       return [];
-      // Return an empty array if there was an error
     }
   }
 
-  async checkTodayCommits(): Promise<boolean> {
-    // Method to check if there are any commits today
-    const [since, until] = [this.today.startOf('day').toISOString(), this.today.endOf('day').toISOString()];
-    // Define the start and end times for today
+  private async checkTodayCommits(): Promise<boolean> {
+    const [since, until] = [
+      this.today.startOf("day").toISOString(),
+      this.today.endOf("day").toISOString(),
+    ];
     const commits = await this.fetchCommits(since, until);
-    // Fetch commits for today
     return commits.length > 0;
-    // Return true if there are any commits, false otherwise
   }
 
-  async commitAndPush(): Promise<void> {
-    // Method to commit and push changes to the repository
+  private async commitAndPush(): Promise<void> {
     try {
       await this.git.add(FILE_TO_UPDATE);
-      // Add the file to be committed
       await this.git.commit(COMMIT_MESSAGE);
-      // Commit the changes with the specified message
       await this.git.push("origin", BRANCH);
-      // Push the changes to the remote repository
-      this.log(`Auto-commit pushed.`);
-      // Log a message indicating the push was successful
+      this.log("Auto-commit pushed.");
     } catch (err: any) {
-      // Catch any errors during the Git operations
       this.log(`Git push error: ${err.message}`);
-      // Log the error message
     }
   }
 
-  log(message: string): void {
-    // Method to log messages to the console and a log file
-    const logEntry = `[${this.getTodayDate()}] ${message}\n`;
-    // Create a log entry with the current date and message
+  private log(message: string): void {
+    const logEntry = `[${this.getFormattedDate()}] ${message}\n`;
     appendFileSync(this.logFile, logEntry);
-    // Append the log entry to the log file
     console.log(logEntry.trim());
-    // Log the entry to the console
   }
 
   async run(): Promise<void> {
-    // Method to run the auto-commit process
     try {
       if (await this.checkTodayCommits()) {
-        // Check if commits already exist for today
         this.log("Commit already exists. No action needed.");
-        // Log a message if commits already exist
         return;
-        // Exit the function if commits already exist
       }
 
       await evolve();
-      // Execute the evolve function
       await this.commitAndPush();
-      // Commit and push the changes
       this.log("Auto-commit successful.");
-      // Log a message indicating the auto-commit was successful
     } catch (error: any) {
-      // Catch any errors during the auto-commit process
       this.log(`Error during auto-commit: ${error.message}`);
-      // Log the error message
     }
   }
 
   start(): void {
-    // Method to start the auto-commit process
     scheduleJob("55 23 * * *", () => this.run());
-    // Schedule the run method to execute daily at 23:55
   }
 }
 
 const autoCommit = new AutoCommit();
-// Create an instance of the AutoCommit class
 autoCommit.start();
-// Start the auto-commit process
 
-// Add a test case
-if (process.env.NODE_ENV === 'test') {
-    console.log('Running test case...');
-    // Mock the evolve function to avoid actual file changes during tests
-    jest.mock('./utilities/evolve', () => ({
-        __esModule: true,
-        default: jest.fn().mockResolvedValue(),
-    }));
+if (process.env.NODE_ENV === "test") {
+  console.log("Running test case...");
+  jest.mock("./utilities/evolve", () => ({
+    __esModule: true,
+    default: jest.fn().mockResolvedValue(),
+  }));
 
-    // Mock the checkTodayCommits function to simulate different scenarios
-    autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(false); // Default: no commits today
+  autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(false);
 
-    // Test case 1: No commits today, evolve and commit should be called
-    autoCommit.run().then(() => {
-        expect(evolve).toHaveBeenCalled();
-        // Add more specific assertions based on the expected behavior
-        console.log('Test case 1 passed');
-    });
+  autoCommit.run().then(() => {
+    expect(evolve).toHaveBeenCalled();
+    console.log("Test case 1 passed");
+  });
 
-    // Test case 2: Commits exist today, evolve and commit should not be called
-    autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(true);
-    autoCommit.run().then(() => {
-        expect(evolve).not.toHaveBeenCalled();
-        // Add more specific assertions based on the expected behavior
-        console.log('Test case 2 passed');
-    });
+  autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(true);
+  autoCommit.run().then(() => {
+    expect(evolve).not.toHaveBeenCalled();
+    console.log("Test case 2 passed");
+  });
 }
