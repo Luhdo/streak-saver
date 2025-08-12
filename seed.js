@@ -4,7 +4,7 @@ cg();
 
 import { scheduleJob } from "node-schedule";
 import simpleGit, { SimpleGit } from "simple-git";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { appendFileSync } from "node:fs";
 import evolve from "./utilities/evolve";
 import {
@@ -18,7 +18,7 @@ import {
 
 class AutoCommit {
   private git: SimpleGit;
-  private today: dayjs.Dayjs;
+  private today: Dayjs;
   private logFile: string;
   private readonly apiUrl: string;
 
@@ -109,17 +109,17 @@ if (process.env.NODE_ENV === "test") {
   console.log("Running test case...");
   jest.mock("./utilities/evolve", () => ({
     __esModule: true,
-    default: jest.fn().mockResolvedValue(),
+    default: jest.fn().mockResolvedValue(undefined),
   }));
 
-  autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(false);
+  (autoCommit.checkTodayCommits as jest.Mock).mockResolvedValue(false);
 
   autoCommit.run().then(() => {
     expect(evolve).toHaveBeenCalled();
     console.log("Test case 1 passed");
   });
 
-  autoCommit.checkTodayCommits = jest.fn().mockResolvedValue(true);
+  (autoCommit.checkTodayCommits as jest.Mock).mockResolvedValue(true);
   autoCommit.run().then(() => {
     expect(evolve).not.toHaveBeenCalled();
     console.log("Test case 2 passed");
