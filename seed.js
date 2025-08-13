@@ -100,6 +100,15 @@ class AutoCommit {
   start(): void {
     scheduleJob("55 23 * * *", () => this.run());
   }
+
+  async reset(): Promise<void> {
+    try {
+      await this.git.reset("hard");
+      this.log("Git reset successful.");
+    } catch (err: any) {
+      this.log(`Git reset error: ${err.message}`);
+    }
+  }
 }
 
 const autoCommit = new AutoCommit();
