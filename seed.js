@@ -180,16 +180,25 @@ if (process.env.NODE_ENV === "test") {
     default: jest.fn().mockResolvedValue(undefined),
   }));
 
-  (autoCommit.checkTodayCommits as jest.Mock).mockResolvedValue(false);
+  const evolveMock = require("./utilities/evolve").default;
+  const checkTodayCommitsMock = jest.spyOn(autoCommit, "checkTodayCommits");
+  const commitAndPushMock = jest.spyOn(autoCommit, "commitAndPush");
 
-  autoCommit.run().then(() => {
-    expect(evolve).toHaveBeenCalled();
-    console.log("Test case 1 passed");
+  it("should call evolve and commitAndPush when no commits exist", async () => {
+    checkTodayCommitsMock.mockResolvedValue(false);
+    await autoCommit.run();
+    expect(evolveMock).toHaveBeenCalled();
+    expect(commitAndPushMock).toHaveBeenCalled();
+    checkTodayCommitsMock.mockRestore();
+    commitAndPushMock.mockRestore();
   });
 
-  (autoCommit.checkTodayCommits as jest.Mock).mockResolvedValue(true);
-  autoCommit.run().then(() => {
-    expect(evolve).not.toHaveBeenCalled();
-    console.log("Test case 2 passed");
+  it("should not call evolve and commitAndPush when commits exist", async () => {
+    checkTodayCommitsMock.mockResolvedValue(true);
+    await autoCommit.run();
+    expect(evolveMock).not.toHaveBeenCalled();
+    expect(commitAndPushMock).not.toHaveBeenCalled();
+    checkTodayCommitsMock.mockRestore();
+    commitAndPushMock.mockRestore();
   });
 }
