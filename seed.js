@@ -34,18 +34,22 @@ class AutoCommit {
   }
 
   private async fetchCommits(since: string, until: string): Promise<any[]> {
-    const url = `${this.apiUrl}?since=${since}&until=${until}`;
     try {
+      const url = `${this.apiUrl}?since=${since}&until=${until}`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${GITHUB_TOKEN}`,
           "User-Agent": "commit-checker",
         },
       });
+
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`GitHub API error: ${error}`);
+        const errorBody = await response.text();
+        throw new Error(
+          `GitHub API error: ${response.status} - ${response.statusText} - ${errorBody}`
+        );
       }
+
       return await response.json();
     } catch (err: any) {
       this.log(`Error fetching commits: ${err.message}`);
@@ -54,12 +58,17 @@ class AutoCommit {
   }
 
   private async checkTodayCommits(): Promise<boolean> {
-    const [since, until] = [
-      this.today.startOf("day").toISOString(),
-      this.today.endOf("day").toISOString(),
-    ];
-    const commits = await this.fetchCommits(since, until);
-    return commits.length > 0;
+    try {
+      const [since, until] = [
+        this.today.startOf("day").toISOString(),
+        this.today.endOf("day").toISOString(),
+      ];
+      const commits = await this.fetchCommits(since, until);
+      return commits.length > 0;
+    } catch (err: any) {
+      this.log(`Error checking commits: ${err.message}`);
+      return false;
+    }
   }
 
   private async commitAndPush(): Promise<void> {
@@ -70,6 +79,7 @@ class AutoCommit {
       this.log("Auto-commit pushed.");
     } catch (err: any) {
       this.log(`Git push error: ${err.message}`);
+      throw err;
     }
   }
 
@@ -94,7 +104,11 @@ class AutoCommit {
   }
 
   start(): void {
-    scheduleJob("55 23 * * *", () => this.run());
+    try {
+      scheduleJob("55 23 * * *", () => this.run());
+    } catch (err: any) {
+      this.log(`Error scheduling job: ${err.message}`);
+    }
   }
 
   async reset(): Promise<void> {
