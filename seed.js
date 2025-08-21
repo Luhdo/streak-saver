@@ -53,7 +53,7 @@ class AutoCommit {
       return await response.json();
     } catch (err: any) {
       this.log(`Error fetching commits: ${err.message}`);
-      return [];
+      throw err;
     }
   }
 
@@ -67,7 +67,7 @@ class AutoCommit {
       return commits.length > 0;
     } catch (err: any) {
       this.log(`Error checking commits: ${err.message}`);
-      return false;
+      throw err;
     }
   }
 
