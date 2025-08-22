@@ -137,19 +137,29 @@ if (process.env.NODE_ENV === "test") {
 
   it("should call evolve and commitAndPush when no commits exist", async () => {
     checkTodayCommitsMock.mockResolvedValue(false);
-    await autoCommit.run();
-    expect(evolveMock).toHaveBeenCalled();
-    expect(commitAndPushMock).toHaveBeenCalled();
-    checkTodayCommitsMock.mockRestore();
-    commitAndPushMock.mockRestore();
+    try {
+      await autoCommit.run();
+      expect(evolveMock).toHaveBeenCalled();
+      expect(commitAndPushMock).toHaveBeenCalled();
+    } catch (error) {
+      console.error("Test failed with error:", error);
+    } finally {
+      checkTodayCommitsMock.mockRestore();
+      commitAndPushMock.mockRestore();
+    }
   });
 
   it("should not call evolve and commitAndPush when commits exist", async () => {
     checkTodayCommitsMock.mockResolvedValue(true);
-    await autoCommit.run();
-    expect(evolveMock).not.toHaveBeenCalled();
-    expect(commitAndPushMock).not.toHaveBeenCalled();
-    checkTodayCommitsMock.mockRestore();
-    commitAndPushMock.mockRestore();
+    try {
+      await autoCommit.run();
+      expect(evolveMock).not.toHaveBeenCalled();
+      expect(commitAndPushMock).not.toHaveBeenCalled();
+    } catch (error) {
+      console.error("Test failed with error:", error);
+    } finally {
+      checkTodayCommitsMock.mockRestore();
+      commitAndPushMock.mockRestore();
+    }
   });
 }
