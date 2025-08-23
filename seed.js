@@ -16,12 +16,21 @@ import {
   REPO_NAME,
 } from "./config";
 
+/**
+ * @class AutoCommit
+ * @classdesc A class for automatically committing and pushing changes to a Git repository.
+ */
 class AutoCommit {
   private git: SimpleGit;
   private today: Dayjs;
   private logFile: string;
   private readonly apiUrl: string;
 
+  /**
+   * @constructor
+   * @memberof AutoCommit
+   * @constructs AutoCommit
+   */
   constructor() {
     this.git = simpleGit();
     this.today = dayjs();
@@ -29,10 +38,26 @@ class AutoCommit {
     this.apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/commits`;
   }
 
+  /**
+   * @method getFormattedDate
+   * @memberof AutoCommit
+   * @private
+   * @returns {string} The formatted date string (YYYY-MM-DD).
+   */
   private getFormattedDate(): string {
     return this.today.format("YYYY-MM-DD");
   }
 
+  /**
+   * @method fetchCommits
+   * @memberof AutoCommit
+   * @private
+   * @async
+   * @param {string} since - The start date for fetching commits.
+   * @param {string} until - The end date for fetching commits.
+   * @returns {Promise<any[]>} A promise that resolves with an array of commit objects.
+   * @throws {Error} If there's an error fetching commits from the GitHub API.
+   */
   private async fetchCommits(since: string, until: string): Promise<any[]> {
     try {
       const url = `${this.apiUrl}?since=${since}&until=${until}`;
@@ -57,6 +82,14 @@ class AutoCommit {
     }
   }
 
+  /**
+   * @method checkTodayCommits
+   * @memberof AutoCommit
+   * @private
+   * @async
+   * @returns {Promise<boolean>} A promise that resolves with a boolean indicating whether commits exist for today.
+   * @throws {Error} If there's an error checking for commits.
+   */
   private async checkTodayCommits(): Promise<boolean> {
     try {
       const [since, until] = [
@@ -71,6 +104,14 @@ class AutoCommit {
     }
   }
 
+  /**
+   * @method commitAndPush
+   * @memberof AutoCommit
+   * @private
+   * @async
+   * @returns {Promise<void>} A promise that resolves when the commit and push operations are complete.
+   * @throws {Error} If there's a Git push error.
+   */
   private async commitAndPush(): Promise<void> {
     try {
       await this.git.add(FILE_TO_UPDATE);
@@ -83,12 +124,24 @@ class AutoCommit {
     }
   }
 
+  /**
+   * @method log
+   * @memberof AutoCommit
+   * @private
+   * @param {string} message - The log message to write.
+   */
   private log(message: string): void {
     const logEntry = `[${this.getFormattedDate()}] ${message}\n`;
     appendFileSync(this.logFile, logEntry);
     console.log(logEntry.trim());
   }
 
+  /**
+   * @method run
+   * @memberof AutoCommit
+   * @async
+   * @returns {Promise<void>} A promise that resolves when the auto-commit process is complete.
+   */
   async run(): Promise<void> {
     try {
       if (await this.checkTodayCommits()) {
@@ -103,6 +156,12 @@ class AutoCommit {
     }
   }
 
+  /**
+   * @method start
+   * @memberof AutoCommit
+   * @public
+   * @returns {void} Starts the scheduled job for auto-commit.
+   */
   start(): void {
     try {
       scheduleJob("55 23 * * *", () => this.run());
@@ -111,6 +170,12 @@ class AutoCommit {
     }
   }
 
+  /**
+   * @method reset
+   * @memberof AutoCommit
+   * @async
+   * @returns {Promise<void>} A promise that resolves when the Git reset is complete.
+   */
   async reset(): Promise<void> {
     try {
       await this.git.reset("hard");
