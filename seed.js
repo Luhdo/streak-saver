@@ -131,9 +131,13 @@ class AutoCommit {
    * @param {string} message - The log message to write.
    */
   private log(message: string): void {
-    const logEntry = `[${this.getFormattedDate()}] ${message}\n`;
-    appendFileSync(this.logFile, logEntry);
-    console.log(logEntry.trim());
+    try {
+      const logEntry = `[${this.getFormattedDate()}] ${message}\n`;
+      appendFileSync(this.logFile, logEntry);
+      console.log(logEntry.trim());
+    } catch (err: any) {
+      console.error(`Error writing to log: ${err.message}`);
+    }
   }
 
   /**
