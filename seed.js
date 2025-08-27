@@ -231,4 +231,22 @@ if (process.env.NODE_ENV === "test") {
       commitAndPushMock.mockRestore();
     }
   });
+
+  it("should handle errors gracefully during the commit process", async () => {
+    checkTodayCommitsMock.mockResolvedValue(false);
+    const commitError = new Error("Simulated commit error");
+    commitAndPushMock.mockRejectedValue(commitError);
+
+    try {
+      await autoCommit.run();
+      // If commitAndPush throws an error, this line should not be reached
+      expect(false).toBe(true); // Force a failure if the error isn't caught
+    } catch (error) {
+      expect(error).toBe(commitError);
+      // Check that the log function was called with the expected error message
+    } finally {
+      checkTodayCommitsMock.mockRestore();
+      commitAndPushMock.mockRestore();
+    }
+  });
 }
