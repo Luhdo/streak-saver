@@ -249,4 +249,18 @@ if (process.env.NODE_ENV === "test") {
       commitAndPushMock.mockRestore();
     }
   });
+
+  it("should handle errors gracefully during the checkTodayCommits process", async () => {
+    const checkCommitsError = new Error("Simulated check commits error");
+    checkTodayCommitsMock.mockRejectedValue(checkCommitsError);
+
+    try {
+      await autoCommit.run();
+      expect(false).toBe(true); // Force a failure if the error isn't caught
+    } catch (error) {
+      expect(error).toBe(checkCommitsError);
+    } finally {
+      checkTodayCommitsMock.mockRestore();
+    }
+  });
 }
