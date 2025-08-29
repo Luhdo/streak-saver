@@ -188,6 +188,21 @@ class AutoCommit {
       this.log(`Git reset error: ${err.message}`);
     }
   }
+
+  /**
+   * @method getRepoStatus
+   * @memberof AutoCommit
+   * @async
+   * @returns {Promise<void>} A promise that resolves when the Git status is fetched and logged.
+   */
+  async getRepoStatus(): Promise<void> {
+    try {
+      const status = await this.git.status();
+      this.log(`Git status:\n${JSON.stringify(status, null, 2)}`);
+    } catch (err: any) {
+      this.log(`Git status error: ${err.message}`);
+    }
+  }
 }
 
 const autoCommit = new AutoCommit();
