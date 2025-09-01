@@ -278,4 +278,18 @@ if (process.env.NODE_ENV === "test") {
       checkTodayCommitsMock.mockRestore();
     }
   });
+
+  it("should not run the auto-commit process if NODE_ENV is not test", async () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    const evolveMock = jest.fn();
+    jest.mock("./utilities/evolve", () => ({
+      __esModule: true,
+      default: evolveMock,
+    }));
+    const autoCommit = new AutoCommit();
+    await autoCommit.run();
+    expect(evolveMock).not.toHaveBeenCalled();
+    process.env.NODE_ENV = originalEnv;
+  });
 }
