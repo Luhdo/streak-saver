@@ -203,6 +203,21 @@ class AutoCommit {
       this.log(`Git status error: ${err.message}`);
     }
   }
+
+    /**
+   * @method revertLastCommit
+   * @memberof AutoCommit
+   * @async
+   * @returns {Promise<void>} A promise that resolves when the last commit is reverted.
+   */
+    async revertLastCommit(): Promise<void> {
+        try {
+            await this.git.reset(["--hard", "HEAD~1"]);
+            this.log("Last commit reverted successfully.");
+        } catch (err: any) {
+            this.log(`Error reverting last commit: ${err.message}`);
+        }
+    }
 }
 
 const autoCommit = new AutoCommit();
